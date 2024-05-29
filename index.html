@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Maze Escape</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #maze-container {
+            display: inline-block;
+            margin-top: 20px;
+            border: 2px solid black;
+        }
+        .cell {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            border: 1px solid black;
+            background-color: white;
+        }
+        .player {
+            background-color: green;
+        }
+        .exit {
+            background-color: red;
+        }
+        .wall {
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <h1>랜덤 미로 탈출</h1>
+    <p>화살표 키를 사용하여 미로를 탈출하세요. 빨간색으로 표시된 출구에 도달해야 합니다. (웹 사이즈를 화면의 반으로 하세요)</p>
+    <p>플레이어는 한 번에 한 칸씩 움직입니다.</p>
+    <div id="maze-container"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const mazeContainer = document.getElementById("maze-container");
+            const mazeSize = 30;
+            const maze = generateMaze(mazeSize);
+            let playerPosition = { x: 0, y: 0 };
+            let exitPosition = findExitPosition(maze);
+
+            renderMaze();
+
+            document.addEventListener("keydown", function(event) {
+                const key = event.key;
+                const newPosition = { x: playerPosition.x, y: playerPosition.y };
+
+                switch(key) {
+                    case "ArrowUp":
+                        newPosition.y -= 1;
+                        break;
+                    case "ArrowDown":
+                        newPosition.y += 1;
+                        break;
+                    case "ArrowLeft":
+                        newPosition.x -= 1;
+                        break;
+                    case "ArrowRight":
+                        newPosition.x += 1;
+                        break;
+                    default:
+                        return;
+                }
+
+                if (isValidMove(newPosition)) {
+                    playerPosition = newPosition;
+                    renderMaze();
+
+                    if (playerPosition.x === exitPosition.x && playerPosition.y === exitPosition.y) {
+                        alert("축하합니다! 미로를 탈출했습니다!");
+                    }
+                }
+            });
+
+            function generateMaze(size) {
+                const maze = Array.from({ length: size }, () => Array(size).fill(1));
+                const stack = [{ x: 0, y: 0 }];
+
+                maze[0][0] = 0;
+
+                while (stack.length > 0) {
+                    const { x, y } = stack.pop();
+                    const directions = shuffle([
+                        { x: x + 2, y, px: x + 1, py: y },
+                        { x: x - 2, y, px: x - 1, py: y },
+                        { x, y: y + 2, px: x, py: y + 1 },
+                        { x, y: y - 2, px: x, py: y - 1 }
+                    ]);
+
+                    for (const { x: nx, y: ny, px, py } of directions) {
+                        if (nx >= 0 && ny >= 0 && nx < size && ny < size && maze[ny][nx] === 1) {
+                            maze[ny][nx] = 0;
+                            maze[py][px] = 0;
+                            stack.push({ x: nx, y: ny });
+                        }
+                    }
+                }
+
+                return maze;
+            }
+
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            function renderMaze() {
+                mazeContainer.innerHTML = "";
+                for (let y = 0; y < mazeSize; y++) {
+                    for (let x = 0; x < mazeSize; x++) {
+                        const cell = document.createElement("div");
+                        cell.classList.add("cell");
+                        if (x === playerPosition.x && y === playerPosition.y) {
+                            cell.classList.add("player");
+                        } else if (x === exitPosition.x && y === exitPosition.y) {
+                            cell.classList.add("exit");
+                        } else if (maze[y][x] === 1) {
+                            cell.classList.add("wall");
+                        }
+                        mazeContainer.appendChild(cell);
+                    }
+                }
+            }
+
+            function isValidMove(position) {
+                return position.x >= 0 && position.x < mazeSize &&
+                       position.y >= 0 && position.y < mazeSize &&
+                       maze[position.y][position.x] !== 1;
+            }
+
+            function findExitPosition(maze) {
+                const size = maze.length;
+                for (let y = size - 1; y >= 0; y--) {
+                    for (let x = size - 1; x >= 0; x--) {
+                        if (maze[y][x] === 0) {
+                            return { x, y };
+                        }
+                    }
+                }
+                return { x: size - 1, y: size - 1 };
+            }
+        });
+    </script>
+</body>
+</html>
